@@ -1,0 +1,71 @@
+Salik got a clear business problem:
+GlobalMart e-commerce app needed safer releases, fewer manual mistakes, and faster issue debugging.
+
+So Salik treated it like a real DevOps mission, step by step:
+
+Understand the real pain first
+Salik realized the issue was not only “code.”
+The bigger issue was delivery: manual deployments, weak visibility, and risky changes.
+
+Stabilize the app first
+Before touching DevOps tools, Salik made sure the API itself works.
+He ran the app, ran tests, and validated health endpoint.
+Lesson: if base app is broken, automation only fails faster.
+
+Containerize and run the local platform
+Salik brought services up with Docker Compose.
+He fixed startup blockers, container conflicts, and build issues.
+Lesson: DevOps is also environment debugging, not just writing YAML.
+
+Fix a real CI/CD chain with Jenkins
+Jenkins setup had multiple practical problems:
+
+Missing pipeline option
+
+Agent identity mismatch
+
+Plugin compatibility issues
+
+Script-level shell errors
+
+Salik solved each one:
+
+Installed required pipeline plugins
+Adjusted pipeline behavior for local setup
+Fixed Jenkinsfile parsing/runtime errors
+Re-ran until pipeline was successful
+Big lesson:
+CI/CD is not “set once.” It is iterative troubleshooting until it becomes reliable.
+
+Build observability (monitoring + logging)
+Salik validated:
+API health endpoint
+Prometheus reachable
+Grafana reachable
+Kibana reachable
+Elasticsearch index/count present
+He generated both success and failure traffic:
+
+200 responses
+expected 404 response
+Then pushed synthetic logs through Logstash to confirm ingestion path.
+Lesson: good teams monitor both happy path and failure path.
+
+Why 404 test was important
+Salik intentionally hit invalid product ID.
+System returned proper 404.
+This proved:
+error handling is correct
+logs/metrics capture real-world failures too
+Story summary in one line:
+Salik turned a “just run the app” assignment into a full DevOps learning journey: reliable app baseline -> automated CI pipeline -> full observability -> production-style troubleshooting mindset.
+
+Where you are now:
+
+App validated
+Docker stack validated
+Jenkins CI pipeline validated
+Monitoring/logging validated
+Kubernetes setup is in progress (waiting for cluster to be fully running)
+So the next chapter in the story is:
+Salik enables Kubernetes, deploys app manifests, and performs blue-green deployment to complete safe release strategy end-to-end.

@@ -17,9 +17,9 @@ set -euo pipefail
 # ── Configuration ─────────────────────────────────────────────────────────────
 NAMESPACE="production"
 APP_NAME="globalmart"
-IMAGE="${DOCKER_IMAGE:-globalmart/globalmart-api}"
+IMAGE="${DOCKER_IMAGE:-project-phoenix-globalmart-api}"
 NEW_VERSION="${GIT_COMMIT_SHORT:-latest}"
-ROLLBACK_WAIT_SECONDS=300   # Keep old slot up for 5 mins after switch
+ROLLBACK_WAIT_SECONDS="${ROLLBACK_WAIT_SECONDS:-300}"   # Keep old slot up after switch
 HEALTH_CHECK_RETRIES=20
 HEALTH_CHECK_INTERVAL=10
 
@@ -38,6 +38,11 @@ log "Image: ${IMAGE}:${NEW_VERSION}"
 LIVE_SLOT=$(kubectl get service ${APP_NAME}-service -n ${NAMESPACE} \
   -o jsonpath='{.spec.selector.slot}' 2>/dev/null || echo "blue")
 
+if [[ -z "${LIVE_SLOT}" || ( "${LIVE_SLOT}" != "blue" && "${LIVE_SLOT}" != "green" ) ]]; then
+  warning "Service selector slot is missing/invalid. Defaulting live slot to blue for first switch."
+  LIVE_SLOT="blue"
+fi
+
 if [[ "$LIVE_SLOT" == "blue" ]]; then
   IDLE_SLOT="green"
 else
@@ -48,6 +53,11 @@ log "Live slot: ${LIVE_SLOT} | Idle slot (deploy target): ${IDLE_SLOT}"
 
 # ── Step 2: Deploy to idle slot ───────────────────────────────────────────────
 log "Deploying ${IMAGE}:${NEW_VERSION} to ${IDLE_SLOT} slot..."
+
+# Ensure idle slot has running replicas before waiting for rollout
+kubectl scale deployment/${APP_NAME}-${IDLE_SLOT} \
+  --replicas=3 \
+  --namespace=${NAMESPACE}
 
 kubectl set image deployment/${APP_NAME}-${IDLE_SLOT} \
   ${APP_NAME}=${IMAGE}:${NEW_VERSION} \
@@ -95,8 +105,8 @@ log "Switching traffic from ${LIVE_SLOT} → ${IDLE_SLOT}..."
 
 kubectl patch service ${APP_NAME}-service \
   --namespace=${NAMESPACE} \
-  --type='json' \
-  -p="[{\"op\": \"replace\", \"path\": \"/spec/selector/slot\", \"value\": \"${IDLE_SLOT}\"}]"
+  --type='merge' \
+  -p="{\"spec\":{\"selector\":{\"app\":\"${APP_NAME}\",\"slot\":\"${IDLE_SLOT}\"}}}"
 
 success "Traffic is now routed to ${IDLE_SLOT} slot (version: ${NEW_VERSION})"
 
