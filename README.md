@@ -428,4 +428,4 @@ Post-Mortem → Fix → Commit  ←───────────────
 
 ---
 
-*Built with ❤️ as a DevOps Capstone Project — Project Phoenix*
+*Built with ❤️ as a DevOps Enthusiast :))
