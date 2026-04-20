@@ -4,7 +4,6 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         timeout(time: 30, unit: 'MINUTES')
-        timestamps()
         disableConcurrentBuilds()
     }
 
@@ -96,7 +95,7 @@ pipeline {
             echo "FAILURE - Build #${BUILD_NUMBER}"
         }
         always {
-            cleanWs()
+            deleteDir()
         }
     }
 }
