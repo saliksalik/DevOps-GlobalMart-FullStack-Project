@@ -1,0 +1,38 @@
+# File: monitoring/alertmanager.yml
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@globalmart.com'
+  smtp_auth_username: 'alerts@globalmart.com'
+  smtp_auth_password: 'your-app-password'
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'devops-team'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'devops-team'
+      repeat_interval: 1h
+    - match:
+        severity: warning
+      receiver: 'devops-team'
+      repeat_interval: 6h
+
+receivers:
+  - name: 'devops-team'
+    email_configs:
+      - to: 'devops-team@globalmart.com'
+        send_resolved: true
+        headers:
+          subject: '[{{ .Status | toUpper }}] GlobalMart Alert: {{ .GroupLabels.alertname }}'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']

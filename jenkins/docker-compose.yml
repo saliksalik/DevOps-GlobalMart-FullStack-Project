@@ -1,0 +1,84 @@
+version: '3.8'
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Project Phoenix — Jenkins Master + Agent (Slave) Architecture
+# Run: docker-compose up -d
+# Access Jenkins: http://localhost:8080
+# ──────────────────────────────────────────────────────────────────────────────
+
+networks:
+  jenkins-net:
+    driver: bridge
+
+volumes:
+  jenkins-home:
+  jenkins-agent-home:
+
+services:
+
+  # ── Jenkins Master (Controller) ────────────────────────────────────────────
+  jenkins-master:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins-master
+    restart: unless-stopped
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"       # Web UI
+      - "50000:50000"     # Agent JNLP connection port
+    environment:
+      - JENKINS_OPTS=--prefix=/
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock   # Allow Jenkins to run Docker
+    networks:
+      - jenkins-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Jenkins Agent (Slave) ──────────────────────────────────────────────────
+  # This agent connects to the master via JNLP on port 50000.
+  # In Jenkins UI: Manage Jenkins → Nodes → New Node → Permanent Agent
+  #   Remote root directory: /home/jenkins/agent
+  #   Launch method: Launch agent by connecting it to the master
+  #   Copy the secret token shown and paste it into JENKINS_SECRET below.
+  jenkins-agent:
+    image: jenkins/inbound-agent:latest-jdk17
+    container_name: jenkins-agent
+    restart: unless-stopped
+    depends_on:
+      jenkins-master:
+        condition: service_healthy
+    environment:
+      - JENKINS_URL=http://jenkins-master:8080
+      - JENKINS_AGENT_NAME=docker-agent-01
+      - JENKINS_SECRET=${JENKINS_AGENT_SECRET:-changeme}   # Set in .env file
+      - JENKINS_AGENT_WORKDIR=/home/jenkins/agent
+    volumes:
+      - jenkins-agent-home:/home/jenkins/agent
+      - /var/run/docker.sock:/var/run/docker.sock           # Agent can also run Docker
+    networks:
+      - jenkins-net
+
+  # ── Jenkins Agent 2 (Scale-out demo) ──────────────────────────────────────
+  jenkins-agent-2:
+    image: jenkins/inbound-agent:latest-jdk17
+    container_name: jenkins-agent-2
+    restart: unless-stopped
+    depends_on:
+      jenkins-master:
+        condition: service_healthy
+    environment:
+      - JENKINS_URL=http://jenkins-master:8080
+      - JENKINS_AGENT_NAME=docker-agent-02
+      - JENKINS_SECRET=${JENKINS_AGENT_2_SECRET:-changeme2}
+      - JENKINS_AGENT_WORKDIR=/home/jenkins/agent
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - jenkins-net

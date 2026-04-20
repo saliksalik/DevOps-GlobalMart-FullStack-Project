@@ -1,0 +1,104 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# File: kubernetes/deployment.yaml
+# Strategy: RollingUpdate — zero-downtime deployments
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: globalmart-deployment
+  namespace: production
+  labels:
+    app: globalmart
+    version: v1
+    tier: backend
+  annotations:
+    kubernetes.io/change-cause: "Initial deployment of GlobalMart API"
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: globalmart
+      version: v1
+
+  # ── Rolling Update Strategy ───────────────────────────────────────────────
+  # maxSurge: How many EXTRA pods can exist above desired count during update
+  # maxUnavailable: How many pods can be DOWN during the update
+  # Result: Always have at least 2 pods running → zero downtime
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+
+  template:
+    metadata:
+      labels:
+        app: globalmart
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+
+    spec:
+      # Graceful shutdown — allow 30s for in-flight requests to complete
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: globalmart
+          image: globalmart/globalmart-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+            - name: APP_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['version']
+
+          # Resource limits — prevent any one pod from starving the node
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+
+          # Liveness Probe — K8s will RESTART the container if this fails
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+
+          # Readiness Probe — K8s will NOT send traffic until this passes
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+
+      # Spread pods across different nodes for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: ["globalmart"]
+                topologyKey: kubernetes.io/hostname

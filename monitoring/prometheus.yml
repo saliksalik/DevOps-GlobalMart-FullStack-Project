@@ -1,0 +1,75 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# File: monitoring/prometheus.yml
+# Purpose: Prometheus scrape configuration for GlobalMart
+# ──────────────────────────────────────────────────────────────────────────────
+
+global:
+  scrape_interval:     15s    # Scrape every 15 seconds
+  evaluation_interval: 15s    # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: globalmart-production
+    environment: production
+
+# ── Alertmanager ──────────────────────────────────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# ── Alert Rules ───────────────────────────────────────────────────────────────
+rule_files:
+  - "rules/globalmart_alerts.yml"
+
+# ── Scrape Configs ────────────────────────────────────────────────────────────
+scrape_configs:
+
+  # Prometheus monitors itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── GlobalMart API (Node.js prom-client) ────────────────────────────────────
+  - job_name: 'globalmart-api'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+          - 'globalmart-api:3000'
+        labels:
+          app: globalmart
+          tier: backend
+    # Kubernetes service discovery (use this instead of static_configs in K8s)
+    # kubernetes_sd_configs:
+    #   - role: pod
+    #     namespaces:
+    #       names: ['production']
+    # relabel_configs:
+    #   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    #     action: keep
+    #     regex: true
+
+  # ── Node Exporter (Host metrics: CPU, RAM, Disk) ────────────────────────────
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+          - 'node-exporter:9100'
+        labels:
+          service: node-metrics
+
+  # ── cAdvisor (Docker container metrics) ─────────────────────────────────────
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets:
+          - 'cadvisor:8080'
+        labels:
+          service: docker-metrics
+
+  # ── Jenkins (build metrics) ──────────────────────────────────────────────────
+  - job_name: 'jenkins'
+    metrics_path: /prometheus
+    static_configs:
+      - targets:
+          - 'jenkins-master:8080'
+        labels:
+          service: ci-cd

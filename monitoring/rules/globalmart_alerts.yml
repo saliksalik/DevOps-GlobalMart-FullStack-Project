@@ -1,0 +1,57 @@
+# File: monitoring/rules/globalmart_alerts.yml
+groups:
+  - name: globalmart_alerts
+    rules:
+
+      - alert: GlobalMartAPIDown
+        expr: up{job="globalmart-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GlobalMart API is DOWN"
+          description: "GlobalMart API has been unreachable for more than 1 minute."
+
+      - alert: HighErrorRate
+        expr: |
+          rate(http_requests_total{job="globalmart-api", status_code=~"5.."}[5m])
+          /
+          rate(http_requests_total{job="globalmart-api"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 5xx error rate (> 5%)"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{job="globalmart-api"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 response time > 1 second"
+          description: "95th percentile latency is {{ $value }}s."
+
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory usage > 85%"
+          description: "Memory usage is {{ $value | humanize }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceRunningOut
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space < 15% free"
+          description: "Only {{ $value | humanize }}% disk space left on {{ $labels.instance }}"

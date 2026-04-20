@@ -1,0 +1,202 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# File: ansible/setup.yml
+# Purpose: Configure target servers for GlobalMart — Install Docker & Java
+# Run: ansible-playbook -i inventory.ini setup.yml
+# ──────────────────────────────────────────────────────────────────────────────
+
+- name: GlobalMart — Server Bootstrap
+  hosts: globalmart_servers
+  become: true          # sudo escalation
+  gather_facts: true
+
+  vars:
+    java_version: "17"
+    docker_compose_version: "2.24.0"
+    app_user: "globalmart"
+    app_dir: "/opt/globalmart"
+
+  pre_tasks:
+    - name: Verify target OS is Ubuntu/Debian
+      assert:
+        that:
+          - ansible_os_family == "Debian"
+        fail_msg: "This playbook only supports Debian/Ubuntu systems."
+
+    - name: Update APT cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+  tasks:
+
+    # ── 1. System Packages ───────────────────────────────────────────────────
+    - name: Install base system packages
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - unzip
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - apt-transport-https
+        state: present
+
+    # ── 2. Install Java (OpenJDK) ────────────────────────────────────────────
+    - name: Install OpenJDK {{ java_version }}
+      apt:
+        name: "openjdk-{{ java_version }}-jdk"
+        state: present
+
+    - name: Set JAVA_HOME in /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: 'JAVA_HOME="/usr/lib/jvm/java-{{ java_version }}-openjdk-amd64"'
+        create: yes
+
+    - name: Verify Java installation
+      command: java -version
+      register: java_version_output
+      changed_when: false
+
+    - name: Show Java version
+      debug:
+        msg: "Java installed: {{ java_version_output.stderr }}"
+
+    # ── 3. Install Docker ────────────────────────────────────────────────────
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker Engine
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Install Docker Compose (standalone)
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Show Docker version
+      debug:
+        msg: "Docker installed: {{ docker_version.stdout }}"
+
+    # ── 4. Create Application User ───────────────────────────────────────────
+    - name: Create GlobalMart application user
+      user:
+        name: "{{ app_user }}"
+        groups: docker
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+
+    # ── 5. Configure Firewall ────────────────────────────────────────────────
+    - name: Allow SSH through UFW
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: Allow HTTP through UFW
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    - name: Allow HTTPS through UFW
+      ufw:
+        rule: allow
+        port: '443'
+        proto: tcp
+
+    - name: Allow App port through UFW
+      ufw:
+        rule: allow
+        port: '3000'
+        proto: tcp
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+
+    # ── 6. Deploy GlobalMart systemd service ────────────────────────────────
+    - name: Create GlobalMart systemd service file
+      copy:
+        dest: /etc/systemd/system/globalmart.service
+        content: |
+          [Unit]
+          Description=GlobalMart E-Commerce API
+          After=docker.service
+          Requires=docker.service
+
+          [Service]
+          User={{ app_user }}
+          Restart=always
+          RestartSec=10
+          WorkingDirectory={{ app_dir }}
+          ExecStartPre=-/usr/bin/docker stop globalmart-api
+          ExecStartPre=-/usr/bin/docker rm globalmart-api
+          ExecStart=/usr/bin/docker run --rm --name globalmart-api \
+            -p 3000:3000 \
+            -e NODE_ENV=production \
+            globalmart/globalmart-api:latest
+          ExecStop=/usr/bin/docker stop globalmart-api
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+
+    - name: Reload systemd and enable GlobalMart service
+      systemd:
+        daemon_reload: true
+        name: globalmart
+        enabled: true
+
+  post_tasks:
+    - name: Print setup summary
+      debug:
+        msg:
+          - "✅ Server setup complete!"
+          - "Java {{ java_version }} — installed"
+          - "Docker — installed and running"
+          - "App user '{{ app_user }}' — created"
+          - "App directory '{{ app_dir }}' — ready"
+          - "Firewall — configured"

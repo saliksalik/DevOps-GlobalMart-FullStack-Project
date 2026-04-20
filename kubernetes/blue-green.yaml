@@ -1,0 +1,105 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# File: kubernetes/blue-green.yaml
+# Purpose: Two identical deployments (blue + green) for zero-downtime switching.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── BLUE Deployment (currently LIVE) ─────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: globalmart-blue
+  namespace: production
+  labels:
+    app: globalmart
+    slot: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: globalmart
+      slot: blue
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: globalmart
+        slot: blue
+        version: v1
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: globalmart
+          image: globalmart/globalmart-api:v1   # ← Current stable version
+          ports:
+            - containerPort: 3000
+          env:
+            - name: APP_VERSION
+              value: "v1"
+            - name: DEPLOY_COLOR
+              value: "blue"
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits:   { memory: "256Mi", cpu: "500m" }
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+# ── GREEN Deployment (IDLE — scaled to 0 until deploy) ───────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: globalmart-green
+  namespace: production
+  labels:
+    app: globalmart
+    slot: green
+spec:
+  replicas: 0          # ← Scaled to 0 when idle; script scales this up
+  selector:
+    matchLabels:
+      app: globalmart
+      slot: green
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: globalmart
+        slot: green
+        version: v2
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: globalmart
+          image: globalmart/globalmart-api:v2   # ← New version (deploy target)
+          ports:
+            - containerPort: 3000
+          env:
+            - name: APP_VERSION
+              value: "v2"
+            - name: DEPLOY_COLOR
+              value: "green"
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits:   { memory: "256Mi", cpu: "500m" }
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
