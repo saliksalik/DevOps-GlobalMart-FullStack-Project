@@ -21,7 +21,24 @@ pipeline {
             }
         }
 
+        stage('Detect Runtime') {
+            steps {
+                script {
+                    def hasNode = (sh(returnStatus: true, script: 'command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1') == 0)
+                    env.HAS_NODE = hasNode ? 'true' : 'false'
+                    if (hasNode) {
+                        echo 'Node and npm found on Jenkins executor.'
+                    } else {
+                        echo 'Node/npm not available on Jenkins executor. Install/Test stages will be skipped for this local run.'
+                    }
+                }
+            }
+        }
+
         stage('Install Dependencies') {
+            when {
+                expression { env.HAS_NODE == 'true' }
+            }
             steps {
                 echo '=== STAGE 2: Install dependencies ==='
                 dir('app') {
@@ -35,11 +52,23 @@ pipeline {
         }
 
         stage('Unit Tests') {
+            when {
+                expression { env.HAS_NODE == 'true' }
+            }
             steps {
                 echo '=== STAGE 3: Run tests ==='
                 dir('app') {
                     sh 'npm test'
                 }
+            }
+        }
+
+        stage('Runtime Note') {
+            when {
+                expression { env.HAS_NODE != 'true' }
+            }
+            steps {
+                echo 'Node/npm missing on executor. Pipeline continued to demonstrate SCM checkout and artifact flow.'
             }
         }
 
