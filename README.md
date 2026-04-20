@@ -67,7 +67,26 @@ Production-grade DevOps capstone for a GlobalMart e-commerce API using Jenkins, 
 9. [Syllabus Coverage Checklist](#-syllabus-coverage-checklist)
 
 ---
+## 🖼️ Execution Proof
 
+This repository includes evidence of the full deployment and validation workflow from local app testing through CNCF-style Kubernetes blue-green release.
+
+### Screenshots
+
+- [App health and API validation](Screenshots/API Health Status 200.png)
+- [Invalid request handled correctly](Screenshots/invalid request handled perfectly.png)
+- [CI pipeline build success](Screenshots/CI Pipeline Build Success.png)
+- [Jenkins dashboard and job creation](Screenshots/jenkins-dashboard.png)
+- [Prometheus UI confirmed](Screenshots/Prometheous Check 200.png)
+- [Grafana UI confirmed](Screenshots/Grafana Check 200.png)
+- [Kibana UI confirmed](Screenshots/Kibana Check 200.png)
+- [Kubernetes enabled and cluster running](Screenshots/Kubernetes Enabled.png)
+- [Blue deployment running 3 pods](Screenshots/Blue deployment is running 3 pods..png)
+- [Green deployment running 3 pods](Screenshots/Green Deplyment running three PODS.png)
+- [Service selector is green after blue-green switch](Screenshots/Service slot is green..png)
+- [All pods healthy after cleanup](Screenshots/All Pods are Healthy.png)
+
+---
 ## 🧠 DevOps Culture & Principles
 
 ### What is DevOps Culture?
