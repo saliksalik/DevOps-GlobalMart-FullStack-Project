@@ -76,9 +76,9 @@ pipeline {
                 echo '=== STAGE 4: Archive artifacts ==='
                 archiveArtifacts artifacts: 'app/package.json, app/coverage/**/*', allowEmptyArchive: true
                 sh '''
-                    echo "Build: ${BUILD_NUMBER}" > build-info.txt
-                    echo "Commit: ${env.GIT_COMMIT_SHORT}" >> build-info.txt
-                    echo "Branch: ${env.GIT_BRANCH_NAME}" >> build-info.txt
+                    echo "Build: $BUILD_NUMBER" > build-info.txt
+                    echo "Commit: $GIT_COMMIT_SHORT" >> build-info.txt
+                    echo "Branch: $GIT_BRANCH_NAME" >> build-info.txt
                     echo "Date:   $(date)" >> build-info.txt
                     cat build-info.txt
                 '''
