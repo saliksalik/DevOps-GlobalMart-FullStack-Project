@@ -56,15 +56,14 @@ Production-grade DevOps capstone for a GlobalMart e-commerce API using Jenkins, 
 
 ## 📋 Table of Contents
 
-1. [DevOps Culture & Principles](#-devops-culture--principles)
-2. [Problem vs. Solution](#-problem-vs-solution)
-3. [Architecture Diagram](#-architecture-diagram)
-4. [Tech Stack](#-tech-stack)
-5. [Project Structure](#-project-structure)
-6. [Quick Start Guide (Windows)](#-quick-start-guide-windows)
-7. [Phase-by-Phase Breakdown](#-phase-by-phase-breakdown)
-8. [Continuous Improvement](#-continuous-improvement)
-9. [Syllabus Coverage Checklist](#-syllabus-coverage-checklist)
+1. [Problem vs. Solution](#-problem-vs-solution)
+2. [Architecture Diagram](#-architecture-diagram)
+3. [Tech Stack](#-tech-stack)
+4. [Project Structure](#-project-structure)
+5. [Quick Start Guide (Windows)](#-quick-start-guide-windows)
+6. [Phase-by-Phase Breakdown](#-phase-by-phase-breakdown)
+7. [Continuous Improvement](#-continuous-improvement)
+8. [Syllabus Coverage Checklist](#-syllabus-coverage-checklist)
 
 ---
 ## 🖼️ Execution Proof
@@ -95,29 +94,6 @@ This repository includes evidence of the full deployment and validation workflow
 ![Kibana log ingestion](Screenshots/Kibana%20Charts-Ingested-Logs.png)
 
 ![Blue-green traffic switch](Screenshots/Service%20slot%20is%20green..png)
-
----
-## 🧠 DevOps Culture & Principles
-
-### What is DevOps Culture?
-DevOps is not a tool — it is a **cultural philosophy** that breaks down the wall between Development (who wants to ship fast) and Operations (who wants stability). It promotes:
-
-- **Collaboration over Silos:** Dev, QA, and Ops share responsibility for the full software lifecycle.
-- **Automation First:** Every repetitive manual task is a bug waiting to happen. Automate it.
-- **Shift Left:** Catch defects, security issues, and misconfigurations *early* (in dev/CI), not in production.
-- **Fail Fast, Learn Faster:** Small, frequent releases reduce blast radius. Failures become learning opportunities.
-- **Shared Ownership:** The team that builds it, runs it. No more "throwing code over the wall."
-
-### Continuous Improvement Principles Applied in This Project
-
-| Principle | Implementation in Project Phoenix |
-|---|---|
-| **CALMS** (Culture, Automation, Lean, Measurement, Sharing) | Each phase maps to one pillar of CALMS |
-| **The Three Ways** (Flow, Feedback, Continuous Learning) | Jenkins pipeline = Flow; Prometheus/Kibana = Feedback; Post-mortems = Learning |
-| **Kaizen** (Small, continuous improvements) | Every merge to `develop` triggers the pipeline, surfacing issues immediately |
-| **Blameless Post-Mortems** | Alert rules are written to capture *what* failed, not *who* failed |
-
----
 
 ## ⚔️ Problem vs. Solution
 
@@ -451,7 +427,6 @@ Post-Mortem → Fix → Commit  ←───────────────
 
 | Topic | Status | File |
 |---|---|---|
-| DevOps Culture & Principles | ✅ | README.md |
 | Git Branching Strategy | ✅ | `scripts/init-repo.ps1` |
 | Jenkins Master-Slave Architecture | ✅ | `jenkins/docker-compose.yml` |
 | Declarative Jenkinsfile Pipeline | ✅ | `Jenkinsfile` |
