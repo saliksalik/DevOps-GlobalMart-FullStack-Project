@@ -1,4 +1,4 @@
-# 🚀 Project Phoenix — GlobalMart DevOps Transformation
+# 🚀   GlobalMart: DevOps Transformation
 
 Project Phoenix is a full-stack DevOps implementation of a fictional but realistic e-commerce company called GlobalMart.
 The goal of this project is simple: move from fragile, manual delivery to a reliable, observable, and repeatable production workflow.
