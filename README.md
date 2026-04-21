@@ -86,6 +86,16 @@ This repository includes evidence of the full deployment and validation workflow
 - [Service selector is green after blue-green switch](Screenshots/Service slot is green..png)
 - [All pods healthy after cleanup](Screenshots/All Pods are Healthy.png)
 
+### Visual Proof
+
+![CI pipeline build success](Screenshots/CI Pipeline Build Success.png)
+
+![Grafana dashboard](Screenshots/Grafana Dashboard.png)
+
+![Kibana log ingestion](Screenshots/Kibana Charts-Ingested-Logs.png)
+
+![Blue-green traffic switch](Screenshots/Service slot is green..png)
+
 ---
 ## 🧠 DevOps Culture & Principles
 
@@ -351,6 +361,8 @@ export GIT_COMMIT_SHORT="abc1234"
 bash scripts/blue-green-deploy.sh
 ```
 
+> Screenshot: [Service selector is green after blue-green switch](Screenshots/Service slot is green..png)
+
 ### Step 8 — Jenkins Full CD Automation
 If Jenkins has `docker` and `kubectl` available on the build agent, the pipeline can now build the image, optionally push it, and deploy it automatically with blue-green release.
 
@@ -369,6 +381,8 @@ docker-compose up -d
 # Prometheus: http://localhost:9090
 # Grafana:    http://localhost:3001  (admin/admin)
 ```
+
+> Screenshots: [Prometheus confirmed](Screenshots/Prometheous Check 200.png), [Grafana dashboard](Screenshots/Grafana Dashboard.png)
 
 ### Step 10 — Start ELK Stack
 ```powershell
