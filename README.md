@@ -73,28 +73,28 @@ This repository includes evidence of the full deployment and validation workflow
 
 ### Screenshots
 
-- [App health and API validation](Screenshots/API Health Status 200.png)
-- [Invalid request handled correctly](Screenshots/invalid request handled perfectly.png)
-- [CI pipeline build success](Screenshots/CI Pipeline Build Success.png)
+- [App health and API validation](Screenshots/API%20Health%20Status%20200.png)
+- [Invalid request handled correctly](Screenshots/invalid%20request%20handled%20perfectly.png)
+- [CI pipeline build success](Screenshots/CI%20Pipeline%20Build%20Success.png)
 - [Jenkins dashboard and job creation](Screenshots/jenkins-dashboard.png)
-- [Prometheus UI confirmed](Screenshots/Prometheous Check 200.png)
-- [Grafana UI confirmed](Screenshots/Grafana Check 200.png)
-- [Kibana UI confirmed](Screenshots/Kibana Check 200.png)
-- [Kubernetes enabled and cluster running](Screenshots/Kubernetes Enabled.png)
-- [Blue deployment running 3 pods](Screenshots/Blue deployment is running 3 pods..png)
-- [Green deployment running 3 pods](Screenshots/Green Deplyment running three PODS.png)
-- [Service selector is green after blue-green switch](Screenshots/Service slot is green..png)
-- [All pods healthy after cleanup](Screenshots/All Pods are Healthy.png)
+- [Prometheus UI confirmed](Screenshots/Prometheous%20Check%20200.png)
+- [Grafana UI confirmed](Screenshots/Grafana%20Check%20200.png)
+- [Kibana UI confirmed](Screenshots/Kibana%20Check%20200.png)
+- [Kubernetes enabled and cluster running](Screenshots/Kubernetes%20Enabled.png)
+- [Blue deployment running 3 pods](Screenshots/Blue%20deployment%20is%20running%203%20pods..png)
+- [Green deployment running 3 pods](Screenshots/Green%20Deplyment%20running%20three%20PODS.png)
+- [Service selector is green after blue-green switch](Screenshots/Service%20slot%20is%20green..png)
+- [All pods healthy after cleanup](Screenshots/All%20Pods%20are%20Healthy.png)
 
 ### Visual Proof
 
-![CI pipeline build success](Screenshots/CI Pipeline Build Success.png)
+![CI pipeline build success](Screenshots/CI%20Pipeline%20Build%20Success.png)
 
-![Grafana dashboard](Screenshots/Grafana Dashboard.png)
+![Grafana dashboard](Screenshots/Grafana%20Dashboard.png)
 
-![Kibana log ingestion](Screenshots/Kibana Charts-Ingested-Logs.png)
+![Kibana log ingestion](Screenshots/Kibana%20Charts-Ingested-Logs.png)
 
-![Blue-green traffic switch](Screenshots/Service slot is green..png)
+![Blue-green traffic switch](Screenshots/Service%20slot%20is%20green..png)
 
 ---
 ## 🧠 DevOps Culture & Principles
