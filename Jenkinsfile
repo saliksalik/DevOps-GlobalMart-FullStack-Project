@@ -3,7 +3,7 @@ pipeline {
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
 
@@ -20,16 +20,21 @@ pipeline {
             }
         }
 
-        stage('Detect Runtime') {
+        stage('Detect Tools') {
             steps {
                 script {
-                    def hasNode = (sh(returnStatus: true, script: 'command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1') == 0)
-                    env.HAS_NODE = hasNode ? 'true' : 'false'
-                    if (hasNode) {
-                        echo 'Node and npm found on Jenkins executor.'
-                    } else {
-                        echo 'Node/npm not available on Jenkins executor. Install/Test stages will be skipped for this local run.'
-                    }
+                    env.HAS_NODE = (sh(returnStatus: true, script: 'command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1') == 0) ? 'true' : 'false'
+                    env.HAS_DOCKER = (sh(returnStatus: true, script: 'command -v docker >/dev/null 2>&1') == 0) ? 'true' : 'false'
+                    env.HAS_KUBECTL = (sh(returnStatus: true, script: 'command -v kubectl >/dev/null 2>&1') == 0) ? 'true' : 'false'
+                    env.IMAGE_NAME = env.DOCKER_IMAGE ?: 'project-phoenix-globalmart-api'
+                    env.IMAGE_TAG = env.GIT_COMMIT_SHORT ?: 'latest'
+                    env.FULL_IMAGE = env.DOCKER_REGISTRY ? "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}" : env.IMAGE_NAME
+                    env.DOCKER_PUSH_ENABLED = (env.DOCKER_REGISTRY && env.DOCKER_REGISTRY != '') ? 'true' : 'false'
+
+                    echo "Node/npm available: ${env.HAS_NODE}"
+                    echo "Docker available: ${env.HAS_DOCKER}"
+                    echo "kubectl available: ${env.HAS_KUBECTL}"
+                    echo "Image: ${env.FULL_IMAGE}:${env.IMAGE_TAG}"
                 }
             }
         }
@@ -62,18 +67,66 @@ pipeline {
             }
         }
 
-        stage('Runtime Note') {
+        stage('Docker Build') {
             when {
-                expression { env.HAS_NODE != 'true' }
+                expression { env.HAS_DOCKER == 'true' }
             }
             steps {
-                echo 'Node/npm missing on executor. Pipeline continued to demonstrate SCM checkout and artifact flow.'
+                echo '=== STAGE 4: Build Docker image ==='
+                dir('app') {
+                    sh '''
+                        echo "Building Docker image ${FULL_IMAGE}:${IMAGE_TAG}"
+                        docker build -t "${FULL_IMAGE}:${IMAGE_TAG}" .
+                        docker tag "${FULL_IMAGE}:${IMAGE_TAG}" "${FULL_IMAGE}:latest" || true
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            when {
+                expression { env.HAS_DOCKER == 'true' && env.DOCKER_REGISTRY && env.DOCKER_REGISTRY != '' && env.DOCKER_REGISTRY_CREDENTIALS_ID }
+            }
+            steps {
+                echo '=== STAGE 5: Docker login ==='
+                withCredentials([usernamePassword(credentialsId: env.DOCKER_REGISTRY_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin ${DOCKER_REGISTRY}'
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            when {
+                expression { env.HAS_DOCKER == 'true' && env.DOCKER_PUSH_ENABLED == 'true' }
+            }
+            steps {
+                echo '=== STAGE 6: Push Docker image ==='
+                dir('app') {
+                    sh '''
+                        docker push "${FULL_IMAGE}:${IMAGE_TAG}"
+                        docker push "${FULL_IMAGE}:latest" || true
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            when {
+                expression { env.HAS_KUBECTL == 'true' }
+            }
+            steps {
+                echo '=== STAGE 7: Deploy to Kubernetes (Blue-Green) ==='
+                sh '''
+                    export DOCKER_IMAGE="${FULL_IMAGE}"
+                    export GIT_COMMIT_SHORT="${IMAGE_TAG}"
+                    bash scripts/blue-green-deploy.sh
+                '''
             }
         }
 
         stage('Archive Artifacts') {
             steps {
-                echo '=== STAGE 4: Archive artifacts ==='
+                echo '=== STAGE 8: Archive artifacts ==='
                 archiveArtifacts artifacts: 'app/package.json, app/coverage/**/*', allowEmptyArchive: true
                 sh '''
                     echo "Build: $BUILD_NUMBER" > build-info.txt

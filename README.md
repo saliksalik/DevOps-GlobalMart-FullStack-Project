@@ -351,7 +351,18 @@ export GIT_COMMIT_SHORT="abc1234"
 bash scripts/blue-green-deploy.sh
 ```
 
-### Step 8 — Start Monitoring Stack
+### Step 8 — Jenkins Full CD Automation
+If Jenkins has `docker` and `kubectl` available on the build agent, the pipeline can now build the image, optionally push it, and deploy it automatically with blue-green release.
+
+```bash
+export DOCKER_REGISTRY="docker.io/yourorg"
+export DOCKER_IMAGE="globalmart/globalmart-api"
+export DOCKER_REGISTRY_CREDENTIALS_ID="dockerhub-credentials"
+```
+
+If `DOCKER_REGISTRY` is set, the pipeline will push the image before Kubernetes deployment. If not, it will use the local image name for deployment.
+
+### Step 9 — Start Monitoring Stack
 ```powershell
 cd monitoring
 docker-compose up -d
@@ -359,7 +370,7 @@ docker-compose up -d
 # Grafana:    http://localhost:3001  (admin/admin)
 ```
 
-### Step 9 — Start ELK Stack
+### Step 10 — Start ELK Stack
 ```powershell
 # ⚠ Windows: Run this first in WSL2 or Docker Desktop terminal:
 # sysctl -w vm.max_map_count=262144
@@ -375,7 +386,7 @@ docker-compose up -d
 ## 📦 Phase-by-Phase Breakdown
 
 ### Phase 1 — Foundations & CI
-The pipeline starts at every `git push`. Jenkins Master delegates the build job to `docker-agent-01` via the JNLP protocol on port 50000. The Jenkinsfile runs 8 stages: Checkout → Build → Test → Docker Build → Push → Archive → Dev Deploy → Prod Deploy (with manual approval gate on `main`).
+The pipeline starts at every `git push`. Jenkins Master delegates the build job to `docker-agent-01` via the JNLP protocol on port 50000. The Jenkinsfile now runs full automation including Docker build, optional registry push, and Kubernetes blue-green deploy: Checkout → Detect Tools → Build → Test → Docker Build → Docker Login → Docker Push → Kubernetes Deploy → Archive Artifacts.
 
 ### Phase 2 — Configuration & Containers
 **Ansible** (procedural): Runs tasks top-to-bottom to bootstrap a brand-new server. Run once or re-run idempotently.
