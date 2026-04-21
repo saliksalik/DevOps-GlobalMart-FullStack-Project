@@ -472,4 +472,94 @@ Post-Mortem → Fix → Commit  ←───────────────
 
 ---
 
+## 🧭 Architecture Diagram (Visual)
+
+This is the same project flow in very easy wording:
+
+- Developer pushes code.
+- Jenkins runs build, test, image build, push, and deploy.
+- Kubernetes serves traffic using blue-green switching for safe releases.
+- Prometheus and Grafana watch metrics.
+- ELK (Filebeat, Logstash, Elasticsearch, Kibana) collects and shows logs.
+
+```mermaid
+flowchart LR
+  A[Developer Code Change] --> B[Git Push]
+  B --> C[Jenkins Pipeline]
+  C --> D[Run Tests]
+  D --> E[Build Docker Image]
+  E --> F[Push Image to Registry]
+  F --> G[Kubernetes Blue-Green Deploy]
+  G --> H[GlobalMart Service Traffic Switch]
+  H --> I[Users Access API]
+
+  G --> J[Prometheus Metrics]
+  J --> K[Grafana Dashboards]
+
+  G --> L[App/Container Logs]
+  L --> M[Filebeat]
+  M --> N[Logstash]
+  N --> O[Elasticsearch]
+  O --> P[Kibana]
+```
+
+---
+
+## 🖼️ Final Screenshot Gallery (Easy View)
+
+### 1) Jenkins CI/CD is working
+Build completed successfully, so code validation and automation are active.
+
+![Jenkins pipeline success](Screenshots/CI%20Pipeline%20Build%20Success.png)
+
+### 2) App health check is successful
+The API health endpoint returned success, which confirms app readiness.
+
+![API health check](Screenshots/API%20Health%20Status%20200.png)
+
+### 3) Prometheus is collecting metrics
+Prometheus endpoint is reachable and ready for monitoring queries.
+
+![Prometheus check](Screenshots/Prometheous%20Check%20200.png)
+
+### 4) Grafana dashboards are visible
+Grafana is connected and shows observability dashboards.
+
+![Grafana dashboard](Screenshots/Grafana%20Dashboard.png)
+
+### 5) Throughput and error graphs are visible
+This confirms request load and error trends are being tracked.
+
+![Request throughput](Screenshots/Request%20throughput.png)
+
+![4xx error rate](Screenshots/4xx%20error%20rate.png)
+
+![5xx error rate](Screenshots/5xx%20error%20rate.png)
+
+### 6) Latency and resource graphs are visible
+This shows response time and compute usage for performance tracking.
+
+![P95 latency](Screenshots/P95%20Latency.png)
+
+![CPU usage](Screenshots/CPU%20usage.png)
+
+![Container CPU usage](Screenshots/Container%20CPU%20Usage.png)
+
+### 7) Kibana is ingesting and showing logs
+Logs are searchable, which helps troubleshooting and root-cause analysis.
+
+![Kibana logs](Screenshots/Kibana%20Charts-Ingested-Logs.png)
+
+### 8) Kubernetes blue-green traffic switch is confirmed
+Traffic was switched safely to the new slot without downtime.
+
+![Blue-green service switch](Screenshots/Service%20slot%20is%20green..png)
+
+### 9) Cluster health is good after deployment
+Pods are healthy after release and cleanup.
+
+![All pods healthy](Screenshots/All%20Pods%20are%20Healthy.png)
+
+---
+
 *Built with ❤️ as a DevOps Enthusiast :))
